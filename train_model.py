@@ -51,7 +51,7 @@ test_loader = DataLoader(test_set, batch_size = int(num_test/3), shuffle = True,
 
 
 embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
-rnn = SA_model.SentimentAnalysis(batch_size, embedding_matrix, hidden_size, 0.9)
+rnn = SA_model.SentimentAnalysis(batch_size, embedding_matrix, hidden_size, 0.7)
 rnn = rnn.to(device)
 
 learning_rate = 0.0005
@@ -75,6 +75,10 @@ for epoch in range(epoches):
   for batch_index, (seqs, length, target) in enumerate(train_loader):
     seqs, target, length = seqs.to(device), target.to(device), length.to(device)
     seqs = seqs.type(torch.LongTensor)
+    len_order = torch.argsort(length, descending = True)
+    length = length[len_order]
+    seqs = seqs[len_order]
+    target = target[len_order]
     optimiser.zero_grad()
     output = rnn(seqs, length)
     loss = criterion(output, target)
@@ -98,6 +102,10 @@ for epoch in range(epoches):
     for batch_index, (seqs, length, target) in enumerate(test_loader):
       seqs, target, length = seqs.to(device), target.to(device), length.to(device)
       seqs = seqs.type(torch.LongTensor)
+      len_order = torch.argsort(length, descending = True)
+      length = length[len_order]
+      seqs = seqs[len_order]
+      target = target[len_order]
       output = rnn(seqs, length)
       test_pred = torch.cat((test_pred, output.cpu()), dim = 0)
       test_targets = torch.cat((test_targets, target.type(torch.float).cpu()))

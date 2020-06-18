@@ -16,7 +16,7 @@ class SentimentAnalysis(nn.Module):
     self.hidden_size = hidden_size
     self.num_layers = num_layers
     self.embed = nn.Embedding.from_pretrained(embedding_matrix) 
-    self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size = hidden_size, num_layers = num_layers, dropout = 1-kept_prob)
+    self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size = hidden_size, num_layers = num_layers)
     self.fc = nn.Linear(hidden_size, 2)
     self.softmax = nn.Softmax(1)
     self.dropout = nn.Dropout(1-kept_prob)
