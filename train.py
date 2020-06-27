@@ -85,8 +85,12 @@ def run():
     save_path = os.path.join(file_path, 'results')
     MAX_VOCAB_SIZE = 50000
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    with open(os.path.join(file_path, 'dataset_%d.pkl' %MAX_VOCAB_SIZE), 'rb') as f:
+#    with open(os.path.join(file_path, 'dataset_%d.pkl' %MAX_VOCAB_SIZE), 'rb') as f:
+#        dataset = pickle.load(f)
+        
+    with open('aux_files/dataset_%d.pkl' %MAX_VOCAB_SIZE, 'rb') as f:
         dataset = pickle.load(f)
+
         
     skip_list = np.load('aux_files/missed_embeddings_counter_%d.npy' %MAX_VOCAB_SIZE)
     embedding_matrix = np.load('aux_files/embeddings_glove_%d.npy' %(MAX_VOCAB_SIZE))
