@@ -4,7 +4,7 @@ Created on Mon Jun 15 15:23:49 2020
 
 @author: 13758
 """
-from torch.nn.utils.data import Dataset
+from torch.utils.data import Dataset
 
 class Data_infor(Dataset):
   def __init__(self, seqs, target):
