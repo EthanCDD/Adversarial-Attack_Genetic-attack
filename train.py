@@ -22,14 +22,14 @@ from goog_lm import LM
 import lm_data_utils
 import lm_utils
 
-
+import build_embeddings
 from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
 from genetic_pytorch import GeneticAttack_pytorch
 import argparse
 
-import build_embeddings
+
 
 SEED = 1234
 random.seed(SEED)
@@ -67,10 +67,7 @@ parser.add_argument('--test_size',
                     help = 'The number of tested examples',
                     type = int,
                     default = 1000)
-parser.add_argument('--learning_rate',
-                    help = 'learning rate',
-                    type = float,
-                    default = 0.0005)
+
 parser.add_argument('--save_path',
                     help = 'Save path',
                     default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')

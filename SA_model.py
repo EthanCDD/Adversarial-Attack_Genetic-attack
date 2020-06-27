@@ -47,3 +47,57 @@ class SentimentAnalysis(nn.Module):
   def evaluate_accuracy(self, pred, target):
     v = np.sum(np.argmax(pred, 1) == target)
     return v/len(target)
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun 15 15:16:38 2020
+
+@author: 13758
+"""
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+class SentimentAnalysis(nn.Module):
+  def __init__(self, batch_size, embedding_matrix, hidden_size, kept_prob, embedding_dim = 300, num_layers = 2):
+    super(SentimentAnalysis, self).__init__()
+    self.batch_size = batch_size
+    self.hidden_size = hidden_size
+    self.num_layers = num_layers
+    self.embed = nn.Embedding.from_pretrained(embedding_matrix) 
+    self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size = hidden_size, num_layers = num_layers)#, dropout = 1-kept_prob)
+    self.fc = nn.Linear(hidden_size, 2)
+    self.softmax = nn.Softmax(1)
+    self.dropout = nn.Dropout(1-kept_prob)
+
+  def forward(self, seqs, l):
+    h_0, c_0 = self.h_c_initialisation(seqs.shape[0])
+    h_0, c_0 = h_0.cuda(), c_0.cuda()
+    
+    seqs = seqs.permute(1,0)
+    seqs = seqs.cuda()
+    padded_seqs = self.embed(seqs).type(torch.float)
+    padded_seqs = self.dropout(padded_seqs)
+    packed_seqs = pack_padded_sequence(padded_seqs, l)
+    output, (h, c) = self.lstm(packed_seqs, (h_0, c_0))
+    padded_output = pad_packed_sequence(output)
+    lstm_output = torch.mean(padded_output[0], dim = 0)
+    lstm_output = self.dropout(lstm_output)
+    output = self.softmax(self.fc(lstm_output))
+    return output
+    
+  def h_c_initialisation(self, batch):
+    h = torch.zeros(self.num_layers, batch, self.hidden_size)
+    c = torch.zeros(self.num_layers, batch, self.hidden_size)
+
+    h = h.type(torch.float)
+    c = c.type(torch.float)
+    return h, c
+
+  def evaluate_accuracy(self, pred, target):
+    v = np.sum(np.argmax(pred, 1) == target)
+    return v/len(target)
+
+  def pred(self, seq, l):
+    return self.forward(seq, l)

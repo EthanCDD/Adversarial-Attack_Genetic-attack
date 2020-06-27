@@ -15,7 +15,7 @@ import torch.nn as nn
 import torch
 import SA_model
 from keras.preprocessing.sequence import pad_sequences
-
+from data_cluster_seg import Data_infor
 
 rnn_state_save = os.path.join('/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch','best_SA')
 
