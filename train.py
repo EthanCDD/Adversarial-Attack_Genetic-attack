@@ -68,12 +68,12 @@ parser.add_argument('--test_size',
                     type = int,
                     default = 1000)
 
-parser.add_argument('--save_path',
-                    help = 'Save path',
-                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
 parser.add_argument('--file_path',
-                    help = 'File path',
-                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
+                    help = 'Save path',
+                    default = '/lustre/scratch/scratch/ucabdc3/lstm_attack')#'/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
+#parser.add_argument('--file_path',
+#                    help = 'File path',
+#                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
 
 def run():
     args = parser.parse_args()
@@ -89,7 +89,7 @@ def run():
         dataset = pickle.load(f)
 
         
-    skip_list = np.load('aux_files/missed_embeddings_counter_%d.npy' %MAX_VOCAB_SIZE)
+#    skip_list = np.load('aux_files/missed_embeddings_counter_%d.npy' %MAX_VOCAB_SIZE)
     embedding_matrix = np.load('aux_files/embeddings_glove_%d.npy' %(MAX_VOCAB_SIZE))
     embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
     
@@ -111,17 +111,42 @@ def run():
     data_set = Data_infor(padded_test_raw, dataset.test_y)
     num_test = len(data_set)
     indx = list(range(num_test))
+    
+    all_test_set  = Subset(data_set, indx)
     indx = random.sample(indx, SAMPLE_SIZE)
     test_set = Subset(data_set, indx)
     test_loader = DataLoader(test_set, batch_size = batch_size, shuffle = False, pin_memory=True)
-    
+    all_test_loader  = DataLoader(all_test_set, batch_size = 128, shuffle = True)
     
     lstm_size = 128
-    rnn_state_save = os.path.join(file_path,'best_SA')
+    rnn_state_save = os.path.join(file_path,'best_sa_vali')
     model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.7)
     model.eval()
     model.load_state_dict(torch.load(rnn_state_save))
     model = model.to(device)
+    
+    
+    model.eval()
+    test_pred = torch.tensor([])
+    test_targets = torch.tensor([])
+
+    with torch.no_grad():
+      for batch_index, (seqs, length, target) in enumerate(all_test_loader):
+        seqs, target, length = seqs.to(device), target.to(device), length.to(device)
+        seqs = seqs.type(torch.LongTensor)
+        len_order = torch.argsort(length, descending = True)
+        length = length[len_order]
+        seqs = seqs[len_order]
+        target = target[len_order]
+
+        output = model.pred(seqs, length)
+        test_pred = torch.cat((test_pred, output.cpu()), dim = 0)
+        test_targets = torch.cat((test_targets, target.type(torch.float).cpu()))
+
+      accuracy = model.evaluate_accuracy(test_pred.numpy(), test_targets.numpy())
+    print('Test Accuracy:{:.4f}.'.format(accuracy))
+
+    
     
     n1 = 8
     n2 = 4
