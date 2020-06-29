@@ -13,7 +13,7 @@ class Data_infor(Dataset):
 
   def __getitem__(self, indx):
     seq = self.seqs[indx]
-    l = len(self.seqs[indx])
+    l = np.sum(np.sign(self.seqs[indx]))
     label = self.target[indx]
     return seq, l, label
 
