@@ -4,6 +4,7 @@ Created on Mon Jun 15 15:23:49 2020
 
 @author: 13758
 """
+import numpy as np
 from torch.utils.data import Dataset
 
 class Data_infor(Dataset):
