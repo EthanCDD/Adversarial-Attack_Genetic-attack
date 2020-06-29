@@ -178,7 +178,7 @@ def run():
     seq_orig = []
     seq_orig_label = []
     word_varied = []
-    test_loader = torch.load(os.path.join(save_path, 'test_loader'))
+    
     if order_pre != 0:
       seq_success = np.load(os.path.join(save_path,'seq_success.npy'), allow_pickle = True).tolist()
       seq_orig = np.load(os.path.join(save_path,'seq_orig.npy')).tolist()
