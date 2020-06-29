@@ -5,8 +5,8 @@
 
 import os
 #import nltk
-import re
-from collections import Counter
+#import re
+#from collections import Counter
 #from nltk.corpus import stopwords
 from keras.preprocessing.text import Tokenizer
 
@@ -61,7 +61,7 @@ class IMDBDataset(object):
             self.inv_full_dict[idx] = word 
         print('Dataset built !')
         
-    def save(self, path='imdb'):
+    def save(self, path='/lustre/scratch/scratch/ucabdc3/lstm_attack/imdb'):
         with open(path + '_train_set.pickle', 'wb') as f:
             pickle.dump((self.train_text, self.train_seqs, self.train_y) , f)
 

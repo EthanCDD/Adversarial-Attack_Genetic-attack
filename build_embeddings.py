@@ -4,14 +4,14 @@
 """
 
 import numpy as np
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+#from keras.preprocessing.text import Tokenizer
+#from keras.preprocessing.sequence import pad_sequences
 import pickle
 
 import os
 #import nltk
-import re
-from collections import Counter
+#import re
+#from collections import Counter
 
 
 import data_utils
@@ -20,6 +20,7 @@ import glove_utils
 IMDB_PATH = 'aclImdb'
 MAX_VOCAB_SIZE = 50000
 GLOVE_PATH = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch/glove.840B.300d.txt'
+COUNTER_PATH = 'counter-fitted-vectors.txt'
 
 if not os.path.exists('aux_files'):
 	os.mkdir('aux_files')
@@ -38,7 +39,7 @@ glove_embeddings, _ = glove_utils.create_embeddings_matrix(glove_model, imdb_dat
 np.save('aux_files/embeddings_glove_%d.npy' %(MAX_VOCAB_SIZE), glove_embeddings)
 
 # Load the counterfitted-vectors (used by our attack)
-glove2 = glove_utils.loadGloveModel('counter-fitted-vectors.txt')
+glove2 = glove_utils.loadGloveModel(COUNTER_PATH)
 # create embeddings matrix for our vocabulary
 counter_embeddings, missed = glove_utils.create_embeddings_matrix(glove2, imdb_dataset.dict, imdb_dataset.full_dict)
 
