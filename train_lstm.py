@@ -36,7 +36,7 @@ def str2bool(string):
 parser=argparse.ArgumentParser(
         description='LSTM Model Training')
 
-parser.add_argument('--learning rate', 
+parser.add_argument('--learning_rate', 
                     help = 'Learning rate', 
                     type = float,
                     default = 0.0005)
