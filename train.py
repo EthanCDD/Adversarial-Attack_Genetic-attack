@@ -70,7 +70,7 @@ parser.add_argument('--test_size',
 
 parser.add_argument('--file_path',
                     help = 'Save path',
-                    default = '/lustre/scratch/scratch/ucabdc3/lstm_attack')#'/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
+                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
 #parser.add_argument('--file_path',
 #                    help = 'File path',
 #                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
@@ -120,7 +120,7 @@ def run():
     
     lstm_size = 128
     rnn_state_save = os.path.join(file_path,'best_sa_vali')
-    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.7)
+    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, 2, True)
     model.eval()
     model.load_state_dict(torch.load(rnn_state_save))
     model = model.to(device)
@@ -153,13 +153,13 @@ def run():
     pop_size = 60
     max_iters = 30
     
-    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.7)
+    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, 2, True)
     
     batch_model.eval()
     batch_model.load_state_dict(torch.load(rnn_state_save))
     batch_model.to(device)
     
-    neighbour_model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.7)
+    neighbour_model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, 2, True)
     
     neighbour_model.eval()
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
