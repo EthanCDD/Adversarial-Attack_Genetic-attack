@@ -1,4 +1,5 @@
 # Adversarial attack and transferability
+This is based on paper 'Generating Natural Language Adversarial Examples'
 
 Firstly, user is required to download several datasets whereas user might not have access to run `.sh` file. Therefore, `chmod` can be used and an example is shown below
 
