@@ -26,7 +26,7 @@ import build_embeddings
 from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
-from genetic_pytorch import GeneticAttack_pytorch
+from genetic_perplexity import GeneticAttack_pytorch
 from gpt_perlexity import gpt_2_get_words_probs
 import argparse
 
