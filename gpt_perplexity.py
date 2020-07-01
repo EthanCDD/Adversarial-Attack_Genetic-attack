@@ -17,7 +17,7 @@ class gpt_2_get_words_probs(object):
     self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
   def get_probs(self, word_list):
-    prefix_seq = [self.seq(word_list) for seq in word_list]
+    prefix_seq = [self.seq(seq) for seq in word_list]
 
     loss = [math.exp(self.score(seq)) for seq in prefix_seq]
 
