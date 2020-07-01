@@ -140,7 +140,9 @@ class GeneticAttack_pytorch(object):
       prefix = ''
       suffix = None
       if loc > 0 and loc<=self.n_prefix:
-        prefix = [self.i_w_dict[seq_cur[i]] for i in range(int(loc))]
+        prefix = [self.i_w_dict[seq_cur[loc-i-1]] for i in range(int(loc))[::-1]]
+      elif loc>self.n_prefix:
+        prefix = [self.i_w_dict[seq_cur[loc-i-1]] for i in range(self.n_prefix)[::-1]]
 
 
       orig_word = self.i_w_dict[seq[loc]]

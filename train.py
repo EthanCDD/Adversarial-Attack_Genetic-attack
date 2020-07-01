@@ -170,7 +170,7 @@ def run():
     
     ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, compute_dis,
                lm_model, max_iters = max_iters, dataset = dataset,
-               pop_size = pop_size, n1 = n1, n2 = n2, n_prefix = n_prefix
+               pop_size = pop_size, n1 = n1, n2 = n2, n_prefix = n_prefix,
                use_lm = True, use_suffix = False)
     
     
