@@ -12,7 +12,7 @@ import glove_utils
 class GeneticAttack_pytorch(object):
   def __init__(self, model, batch_model, neighbour_model, compute_dis,
                goog_lm, max_iters, dataset,
-               pop_size, n1, n2,
+               pop_size, n1, n2, n_prefix,
                use_lm = True, use_suffix = False):
     self.model = model
     self.batch_model = batch_model
@@ -24,6 +24,7 @@ class GeneticAttack_pytorch(object):
     self.pop_size = pop_size
     self.top_n1 = n1
     self.top_n2 = n2
+    self.n_prefix = n_prefix
     self.use_lm = use_lm
     self.use_suffix = use_suffix
     self.w_i_dict = dataset.dict
@@ -138,19 +139,19 @@ class GeneticAttack_pytorch(object):
     if self.use_lm:
       prefix = ''
       suffix = None
-      if loc > 0:
-        prefix = self.i_w_dict[seq_cur[loc-1]]
+      if loc > 0 and loc<=self.n_prefix:
+        prefix = [self.i_w_dict[seq_cur[i]] for i in range(int(loc))]
 
 
       orig_word = self.i_w_dict[seq[loc]]
       if self.use_suffix and loc < seq_cur.shape[0]-1 and seq_cur[loc+1]!=0:
         suffix = self.i_w_dict[seq_cur[loc+1]]
       replace_words_orig = [self.dataset.inv_dict[w] if w in self.dataset.inv_dict else 'UNK' for w in replace_list[:self.top_n1]] + [orig_word]
-
-      replace_words_scores = self.lm.get_words_probs(prefix, replace_words_orig, suffix)
+     
+      rank_replaces_by_lm = self.lm.get_probs(prefix, replace_words_orig, self.n_prefix, loc)
         
-      new_words_scores = np.array(replace_words_scores[:-1])
-      rank_replaces_by_lm = np.argsort(-new_words_scores)
+#      new_words_scores = np.array(replace_words_scores[:-1])
+#      rank_replaces_by_lm = np.argsort(-new_words_scores)
       filtered_words_idx = rank_replaces_by_lm[self.top_n2:]
 
       new_seq_scores[filtered_words_idx] = -10000000

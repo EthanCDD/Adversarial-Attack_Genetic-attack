@@ -18,7 +18,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 import data_utils
 import glove_utils
-from goog_lm import LM
+#from goog_lm import LM
 import lm_data_utils
 import lm_utils
 
@@ -27,6 +27,7 @@ from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
 from genetic_pytorch import GeneticAttack_pytorch
+from gpt2_model import gpt_2_get_words_probs
 import argparse
 
 
@@ -93,7 +94,7 @@ def run():
     embedding_matrix = np.load('aux_files/embeddings_glove_%d.npy' %(MAX_VOCAB_SIZE))
     embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
     
-    goog_lm = LM()
+#    goog_lm = LM()
     
     # pytorch
     max_len = 250
@@ -152,6 +153,7 @@ def run():
     n2 = 4
     pop_size = 60
     max_iters = 30
+    n_prefix = 4
     
     batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
     
@@ -164,10 +166,11 @@ def run():
     neighbour_model.eval()
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
     neighbour_model.to(device)
+    lm_model = gpt_2_get_words_probs()
     
     ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, compute_dis,
-               goog_lm, max_iters = max_iters, dataset = dataset,
-               pop_size = pop_size, n1 = n1, n2 = n2,
+               lm_model, max_iters = max_iters, dataset = dataset,
+               pop_size = pop_size, n1 = n1, n2 = n2, n_prefix = n_prefix
                use_lm = True, use_suffix = False)
     
     
