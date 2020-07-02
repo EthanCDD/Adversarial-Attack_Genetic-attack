@@ -12,7 +12,7 @@ import glove_utils
 class GeneticAttack_pytorch(object):
   def __init__(self, model, batch_model, neighbour_model, compute_dis,
                goog_lm, max_iters, dataset,
-               pop_size, n1, n2, n_prefix,
+               pop_size, n1, n2, n_prefix, n_suffix,
                use_lm = True, use_suffix = False):
     self.model = model
     self.batch_model = batch_model
@@ -25,6 +25,7 @@ class GeneticAttack_pytorch(object):
     self.top_n1 = n1
     self.top_n2 = n2
     self.n_prefix = n_prefix
+    self.n_suffix = n_suffix
     self.use_lm = use_lm
     self.use_suffix = use_suffix
     self.w_i_dict = dataset.dict
@@ -138,8 +139,8 @@ class GeneticAttack_pytorch(object):
     new_seq_scores[self.top_n1:] = -10000000
     
     if self.use_lm:
-      prefix = ''
-      suffix = None
+      prefix = ['']
+      suffix = ['']
       if loc > 0 and loc<=self.n_prefix:
         prefix = [self.i_w_dict[seq_cur[loc-i-1]] for i in range(int(loc))[::-1]]
       elif loc>self.n_prefix:
@@ -147,9 +148,13 @@ class GeneticAttack_pytorch(object):
 
 
 #      orig_word = self.i_w_dict[seq[loc]]
-      if self.use_suffix and loc < seq_cur.shape[0]-2 and seq_cur[loc+2]!=0:
-        suffix = self.i_w_dict[seq_cur[loc+2]]
-      word_list = [prefix+w+suffix for w in replace_list[:self.top_n1]]
+      if self.use_suffix and loc < seq_cur.shape[0]-self.n_suffix and seq_cur[loc+self.n_suffix]!=0:
+        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,self.n_suffix+1)]
+      elif self.use_suffix and loc < len(seq_cur.shape[0]):
+        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,seq_cur.shape[0]-loc)]
+
+      # print(prefix, suffix)
+      word_list = [prefix+[self.dataset.inv_dict[w]]+suffix if w in self.dataset.inv_dict else prefix+['UNK']+suffix for w in replace_list[:self.top_n1]]
 #      replace_words_orig = [self.dataset.inv_dict[w] if w in self.dataset.inv_dict else 'UNK' for w in replace_list[:self.top_n1]] + [orig_word]
      
       replace_words_scores = self.lm.get_probs(word_list)

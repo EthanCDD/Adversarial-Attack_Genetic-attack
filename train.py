@@ -26,8 +26,8 @@ import build_embeddings
 from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
-from genetic_pytorch import GeneticAttack_pytorch
-from gpt2_model import gpt_2_get_words_probs
+from genetic_perplexity import GeneticAttack_pytorch
+from gpt_perplexity import gpt_2_get_words_probs
 import argparse
 
 
@@ -153,8 +153,8 @@ def run():
     n2 = 4
     pop_size = 60
     max_iters = 30
-    n_prefix = 4
-    
+    n_prefix = 2
+    n_suffix = 2
     batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
     
     batch_model.eval()
@@ -171,7 +171,7 @@ def run():
     ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, compute_dis,
                lm_model, max_iters = max_iters, dataset = dataset,
                pop_size = pop_size, n1 = n1, n2 = n2, n_prefix = n_prefix,
-               use_lm = True, use_suffix = False)
+               n_suffix = n_suffix, use_lm = True, use_suffix = True)
     
     
     TEST_SIZE = args.test_size
