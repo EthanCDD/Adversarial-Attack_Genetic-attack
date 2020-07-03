@@ -43,7 +43,7 @@ class GeneticAttack_pytorch(object):
     seq_len = np.sum(np.sign(seq))
     l = l.cpu()
     # To calculate the sampling probability 
-    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(i), ret_count = 50, threshold = 0.5) for i in seq]
+    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(i), ret_count = 50, threshold = 0.5) if i !=0 else ([], []) for i in seq]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
     neighbour_len = [len(i) for i in neighbour_list]
@@ -53,7 +53,7 @@ class GeneticAttack_pytorch(object):
     prob_select = neighbour_len/np.sum(neighbour_len)
     tmp = [glove_utils.pick_most_similar_words(
         self.compute_dist(i), self.top_n1, 0.5
-    ) for i in seq]
+    ) if i !=0 else ([], []) for i in seq]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
     pop = [self.perturb(seq_adv, seq, neighbour_list, neighbour_dist, prob_select, seq_len, target, l) for _ in range(self.pop_size)]
@@ -148,10 +148,10 @@ class GeneticAttack_pytorch(object):
 
 
 #      orig_word = self.i_w_dict[seq[loc]]
-      if self.use_suffix and loc < seq_cur.shape[0]-self.n_suffix and seq_cur[loc+self.n_suffix]!=0:
+      if self.use_suffix and loc < l-self.n_suffix and seq_cur[loc+self.n_suffix]!=0:
         suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,self.n_suffix+1)]
-      elif self.use_suffix and loc < len(seq_cur.shape[0]):
-        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,seq_cur.shape[0]-loc)]
+      elif self.use_suffix and loc < l:
+        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,l-loc)]
 
       # print(prefix, suffix)
       word_list = [prefix+[self.dataset.inv_dict[w]]+suffix if w in self.dataset.inv_dict else prefix+['UNK']+suffix for w in replace_list[:self.top_n1]]
@@ -159,8 +159,8 @@ class GeneticAttack_pytorch(object):
      
       replace_words_scores = self.lm.get_probs(word_list)
         
-      new_words_scores = np.array(replace_words_scores[:-1])
-      rank_replaces_by_lm = np.argsort(-new_words_scores)
+      new_words_scores = np.array(replace_words_scores)
+      rank_replaces_by_lm = np.argsort(new_words_scores)
       filtered_words_idx = rank_replaces_by_lm[self.top_n2:]
 
       new_seq_scores[filtered_words_idx] = -10000000

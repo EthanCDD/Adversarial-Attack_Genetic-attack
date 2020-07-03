@@ -22,7 +22,8 @@ import glove_utils
 import lm_data_utils
 import lm_utils
 
-import build_embeddings
+if not os.path.exists('aux_files'):
+    import build_embeddings
 from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
@@ -57,6 +58,10 @@ parser.add_argument('--nlayer',
                     help = 'The number of LSTM layers',
                     type = int,
                     default = 2)
+parser.add_argument('--bidirection',
+                    help = 'Bidirectional LSTM',
+                    type = str2bool,
+                    default = True)
 parser.add_argument('--data',
                     help = 'The applied dataset',
                     default = 'IMDB')
@@ -78,7 +83,7 @@ parser.add_argument('--file_path',
 
 def run():
     args = parser.parse_args()
-    
+    bidirection = args.bidirection
     file_path = args.file_path#'/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch/glove.840B.300d.txt'#'/lustre/scratch/scratch/ucabdc3/lstm_attack'
     save_path = os.path.join(file_path, 'results')
     MAX_VOCAB_SIZE = 50000
@@ -121,7 +126,7 @@ def run():
     
     lstm_size = 128
     rnn_state_save = os.path.join(file_path,'best_sa_vali')
-    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
+    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=bidirection)
     model.eval()
     model.load_state_dict(torch.load(rnn_state_save))
     model = model.to(device)
@@ -153,15 +158,15 @@ def run():
     n2 = 4
     pop_size = 60
     max_iters = 30
-    n_prefix = 2
-    n_suffix = 2
-    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
+    n_prefix = 6
+    n_suffix = 6
+    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=bidirection)
     
     batch_model.eval()
     batch_model.load_state_dict(torch.load(rnn_state_save))
     batch_model.to(device)
     
-    neighbour_model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
+    neighbour_model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=bidirection)
     
     neighbour_model.eval()
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
