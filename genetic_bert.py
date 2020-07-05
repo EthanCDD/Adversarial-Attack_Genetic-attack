@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 27 19:51:03 2020
+Created on Sun Jul  5 17:34:57 2020
 
 @author: 13758
 """
+
 import torch
 import numpy as np
 import glove_utils
@@ -11,7 +12,7 @@ import glove_utils
 
 class GeneticAttack_pytorch(object):
   def __init__(self, model, batch_model, neighbour_model, compute_dis,
-               goog_lm, max_iters, dataset,
+               lm_model, tokenizer = tokenizer, max_iters, dataset,
                pop_size, n1, n2, n_prefix, n_suffix,
                use_lm = True, use_suffix = False):
     self.model = model
@@ -27,11 +28,12 @@ class GeneticAttack_pytorch(object):
     self.n_prefix = n_prefix
     self.n_suffix = n_suffix
     self.use_lm = use_lm
+    self.tokenizer = tokenizer
     self.use_suffix = use_suffix
     self.w_i_dict = dataset.dict
     self.i_w_dict = dataset.inv_dict
     self.dataset = dataset
-    self.lm = goog_lm
+    self.lm = lm_model
     self.temp = 0.3
     self.max_iters = max_iters
     self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -43,7 +45,7 @@ class GeneticAttack_pytorch(object):
     seq_len = np.sum(np.sign(seq))
     l = l.cpu()
     # To calculate the sampling probability 
-    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(seq[i]), ret_count = 50, threshold = 0.5) for i in range(l)]
+    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens(seq[i])]), ret_count = 50, threshold = 0.5) for i in range(l)]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
     neighbour_len = [len(i) for i in neighbour_list]
@@ -52,7 +54,7 @@ class GeneticAttack_pytorch(object):
         neighbour_len[i] = 0
     prob_select = neighbour_len/np.sum(neighbour_len)
     tmp = [glove_utils.pick_most_similar_words(
-        self.compute_dist(seq[i]), self.top_n1, 0.5
+        self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens(seq[i])]), self.top_n1, 0.5
     ) for i in range(l)]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
@@ -114,7 +116,7 @@ class GeneticAttack_pytorch(object):
   
   def replace(self, seq_cur, loc, w):
     seq_new = seq_cur.copy()
-    seq_new[loc] = w
+    seq_new[loc] = self.tokenizer.convert_tokens_to_ids(self.dataset.inv_dict[w])
     return seq_new
 
 
@@ -142,16 +144,16 @@ class GeneticAttack_pytorch(object):
       prefix = ['']
       suffix = ['']
       if loc > 0 and loc<=self.n_prefix:
-        prefix = [self.i_w_dict[seq_cur[loc-i-1]] for i in range(int(loc))[::-1]]
+        prefix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc-i-1]] for i in range(int(loc))[::-1]]
       elif loc>self.n_prefix:
-        prefix = [self.i_w_dict[seq_cur[loc-i-1]] for i in range(self.n_prefix)[::-1]]
+        prefix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc-i-1]] for i in range(self.n_prefix)[::-1]]
 
 
 #      orig_word = self.i_w_dict[seq[loc]]
       if self.use_suffix and loc < l-self.n_suffix and seq_cur[loc+self.n_suffix]!=0:
-        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,self.n_suffix+1)]
+        suffix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc+i]] for i in range(1,self.n_suffix+1)]
       elif self.use_suffix and loc < l:
-        suffix = [self.i_w_dict[seq_cur[loc+i]] for i in range(1,l-loc)]
+        suffix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc+i]] for i in range(1,l-loc)]
 
       # print(prefix, suffix)
       word_list = [prefix+[self.dataset.inv_dict[w]]+suffix if w in self.dataset.inv_dict else prefix+['UNK']+suffix for w in replace_list[:self.top_n1]]
