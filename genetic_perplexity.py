@@ -68,7 +68,7 @@ class GeneticAttack_pytorch(object):
       l_tensor = l_tensor.to(self.device)
       self.batch_model.eval()
       with torch.no_grad():
-        pop_preds = self.batch_model.pred(pop_tensor, l_tensor).cpu().detach().numpy()
+        pop_preds = self.batch_model.pred(pop_tensor, l_tensor)[1].cpu().detach().numpy()
       
       pop_scores = pop_preds[:, target]
       print('\t\t', i, ' -- ', np.max(pop_scores))
@@ -126,14 +126,14 @@ class GeneticAttack_pytorch(object):
     l_tensor = l_tensor.to(self.device)
     self.neighbour_model.eval()
     with torch.no_grad():
-      new_seq_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor).cpu().detach().numpy()
+      new_seq_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor)[1].cpu().detach().numpy()
     
     new_seq_scores = new_seq_preds[:, target]
-    seq_tensor = torch.tensor(np.expand_dims(seq, axis = 0)).type(torch.LongTensor).to(self.device)
+    seq_tensor = torch.tensor(np.expand_dims(seq_cur, axis = 0)).type(torch.LongTensor).to(self.device)
     l_tensor = l.to(self.device)
     self.model.eval()
     with torch.no_grad():
-      orig_score = self.model.pred(seq_tensor, l_tensor).cpu().detach().numpy()[0, target]
+      orig_score = self.model.pred(seq_tensor, l_tensor)[1].cpu().detach().numpy()[0, target]
     new_seq_scores -= orig_score
     
     new_seq_scores[self.top_n1:] = -10000000

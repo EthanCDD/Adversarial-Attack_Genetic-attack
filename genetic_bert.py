@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Jul  6 11:26:28 2020
+
+@author: 13758
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Sun Jul  5 17:34:57 2020
 
 @author: 13758
@@ -12,7 +19,7 @@ import glove_utils
 
 class GeneticAttack_pytorch(object):
   def __init__(self, model, batch_model, neighbour_model, compute_dis,
-               lm_model, tokenizer = tokenizer, max_iters, dataset,
+               lm_model, tokenizer, max_iters, dataset,
                pop_size, n1, n2, n_prefix, n_suffix,
                use_lm = True, use_suffix = False):
     self.model = model
@@ -40,27 +47,29 @@ class GeneticAttack_pytorch(object):
     
 
   def attack(self, seq, target, l, max_change = 0.4):
-    seq = seq.numpy().squeeze()
+    seq = seq.cpu().detach().numpy().squeeze()  #'''label of change; convert'''
     seq_adv = seq.copy()
     seq_len = np.sum(np.sign(seq))
     l = l.cpu()
+    # print(self.tokenizer.convert_ids_to_tokens(seq.tolist()))
     # To calculate the sampling probability 
-    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens(seq[i])]), ret_count = 50, threshold = 0.5) for i in range(l)]
+    tmp = [glove_utils.pick_most_similar_words(self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens([seq[i]])[0]]), ret_count = 50, threshold = 0.5) if self.tokenizer.convert_ids_to_tokens([seq[i]])[0] in self.dataset.dict else ([], []) for i in range(l)]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
     neighbour_len = [len(i) for i in neighbour_list]
     for i in range(seq_len):
-      if seq[i] < 27:
+      if self.tokenizer.convert_ids_to_tokens([seq[i]])[0] in self.dataset.dict and self.dataset.dict[self.tokenizer.convert_ids_to_tokens([seq[i]])[0]] < 27:
         neighbour_len[i] = 0
     prob_select = neighbour_len/np.sum(neighbour_len)
+    # print(prob_select)
     tmp = [glove_utils.pick_most_similar_words(
-        self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens(seq[i])]), self.top_n1, 0.5
-    ) for i in range(l)]
+        self.compute_dist(self.dataset.dict[self.tokenizer.convert_ids_to_tokens([seq[i]])[0]]), self.top_n1, 0.5
+    ) if self.tokenizer.convert_ids_to_tokens([seq[i]])[0] in self.dataset.dict else ([], []) for i in range(l)]
     neighbour_list = [t[0] for t in tmp]
     neighbour_dist = [t[1] for t in tmp]
     pop = [self.perturb(seq_adv, seq, neighbour_list, neighbour_dist, prob_select, seq_len, target, l) for _ in range(self.pop_size)]
 
-    l_tensor = l*torch.ones([len(pop)])
+    l_tensor = l*torch.ones([len(pop)]).type(torch.LongTensor)
     pop_np = np.expand_dims(pop[0], 0)
     for p in pop[1:]:
       pop_np = np.concatenate((pop_np, np.expand_dims(p, 0)),0) 
@@ -110,6 +119,7 @@ class GeneticAttack_pytorch(object):
       rand_idx = np.random.choice(prob_len, 1, p = prob_select)[0]
     
     replace_list = neighbour_list[rand_idx]
+    # print(replace_list)
     if len(replace_list) < self.top_n1:
       replace_list = np.concatenate((replace_list, np.zeros(self.top_n1 - replace_list.shape[0])))
     return self.select_best_replacement(rand_idx, seq_cur, seq, target, l, replace_list)
@@ -122,14 +132,18 @@ class GeneticAttack_pytorch(object):
 
   def select_best_replacement(self, loc, seq_cur, seq, target, l, replace_list):
     new_seq_list = [self.replace(seq_cur, loc, w) if seq[loc]!=w and w != 0 else seq_cur for w in replace_list]
+    # print('-------------------------')
+    # print([self.tokenizer.convert_ids_to_tokens(seq) for seq in new_seq_list])
+    # print('-------------------------')
     l_seq_list = len(new_seq_list)
     new_seq_list_tensor = torch.tensor(new_seq_list).type(torch.LongTensor).to(self.device)
-    l_tensor = l*torch.ones([l_seq_list])
+    l_tensor = l*torch.ones([l_seq_list]).type(torch.LongTensor)
     l_tensor = l_tensor.to(self.device)
     self.neighbour_model.eval()
     with torch.no_grad():
       new_seq_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor).cpu().detach().numpy()
-    
+    # print(new_seq_preds)
+    # print(target)
     new_seq_scores = new_seq_preds[:, target]
     seq_tensor = torch.tensor(np.expand_dims(seq, axis = 0)).type(torch.LongTensor).to(self.device)
     l_tensor = l.to(self.device)
@@ -144,21 +158,21 @@ class GeneticAttack_pytorch(object):
       prefix = ['']
       suffix = ['']
       if loc > 0 and loc<=self.n_prefix:
-        prefix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc-i-1]] for i in range(int(loc))[::-1]]
+        prefix = [self.tokenizer.convert_ids_to_tokens([seq_cur[loc-i-1]])[0] for i in range(0, int(loc)-1)[::-1]]
       elif loc>self.n_prefix:
-        prefix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc-i-1]] for i in range(self.n_prefix)[::-1]]
+        prefix = [self.tokenizer.convert_ids_to_tokens([seq_cur[loc-i-1]])[0] for i in range(self.n_prefix)[::-1]]
 
 
-#      orig_word = self.i_w_dict[seq[loc]]
-      if self.use_suffix and loc < l-self.n_suffix and seq_cur[loc+self.n_suffix]!=0:
-        suffix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc+i]] for i in range(1,self.n_suffix+1)]
+#      orig_word = self.tokenizer.convert_ids_to_tokens([seq[loc]])[0]
+      if self.use_suffix and loc < l-self.n_suffix and seq_cur[loc+self.n_suffix+1]!=0:
+        suffix = [self.tokenizer.convert_ids_to_tokens([seq_cur[loc+i]])[0] for i in range(1,self.n_suffix+1)]
       elif self.use_suffix and loc < l:
-        suffix = [self.tokenizer.convert_ids_to_tokens[seq_cur[loc+i]] for i in range(1,l-loc)]
-
+        suffix = [self.tokenizer.convert_ids_to_tokens([seq_cur[loc+i]])[0] for i in range(1,l-loc-1)]
+#      print(orig_word, [self.dataset.inv_dict[w] for w in replace_list[:self.top_n1] if w in self.dataset.inv_dict])
       # print(prefix, suffix)
       word_list = [prefix+[self.dataset.inv_dict[w]]+suffix if w in self.dataset.inv_dict else prefix+['UNK']+suffix for w in replace_list[:self.top_n1]]
 #      replace_words_orig = [self.dataset.inv_dict[w] if w in self.dataset.inv_dict else 'UNK' for w in replace_list[:self.top_n1]] + [orig_word]
-     
+      # print(word_list)
       replace_words_scores = self.lm.get_probs(word_list)
         
       new_words_scores = np.array(replace_words_scores)

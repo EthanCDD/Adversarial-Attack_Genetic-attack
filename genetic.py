@@ -2,12 +2,13 @@ import torch
 import numpy as np
 import glove_utils
 
-class GeneticAtack(object):
+class GeneticAttack_pytorch(object):
     def __init__(self, model, batch_model, neighbour_model, compute_dis,
                lm, max_iters, dataset,
                pop_size, n1, n2, n_prefix, n_suffix,
                use_lm = True, use_suffix = False):
 #        self.dist_mat = dist_mat
+        self.compute_dist = compute_dis
         self.dataset = dataset
         self.dict = self.dataset.dict
         self.inv_dict = self.dataset.inv_dict
@@ -22,6 +23,7 @@ class GeneticAtack(object):
         self.pop_size = pop_size
         self.lm = lm
         self.top_n = n1  # similar words
+        self.top_n1 = n1
         self.top_n2 = n2
         self.use_lm = use_lm
         self.use_suffix = use_suffix
@@ -45,22 +47,22 @@ class GeneticAtack(object):
         l_tensor = x_len*torch.ones([l_seq_list])
         l_tensor = l_tensor.to(self.device)
         with torch.no_grad():
-            new_x_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor).cpu().detach().numpy()
+            new_x_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor)[1].cpu().detach().numpy()
 
         # Keep only top_n
         # replace_list = replace_list[:self.top_n]
         #new_x_list = new_x_list[:self.top_n]
         #new_x_preds = new_x_preds[:self.top_n,:]
+        # new_x_scores = new_x_preds[:, target]
+        # orig_score = self.model.pred(
+        #     self.sess, x_cur[np.newaxis, :])[1][0, target]
+        
         new_x_scores = new_x_preds[:, target]
-        orig_score = self.model.predict(
-            self.sess, x_cur[np.newaxis, :])[0, target]
-        
-        
         seq_tensor = torch.tensor(np.expand_dims(x_orig, axis = 0)).type(torch.LongTensor).to(self.device)
         l_tensor = torch.tensor([x_len]).to(self.device)
         self.model.eval()
         with torch.no_grad():
-          orig_score = self.model.pred(seq_tensor, l_tensor).cpu().detach().numpy()[0, target]
+          orig_score = self.model.pred(seq_tensor, l_tensor)[1].cpu().detach().numpy()[0, target]
         new_x_scores = new_x_scores - orig_score
         
         # Eliminate not that clsoe words
@@ -158,11 +160,12 @@ class GeneticAtack(object):
         return x_new
 
     def attack(self, x_orig, target, max_change=0.4):
+        x_orig = x_orig.numpy().squeeze()
         x_adv = x_orig.copy()
         x_len = np.sum(np.sign(x_orig))
         # Neigbhours for every word.
         tmp = [glove_utils.pick_most_similar_words(
-            self.compute_dist(x_orig[i]), self.dist_mat, 50, 0.5) for i in range(x_len)]
+            self.compute_dist(x_orig[i]), 50, 0.5) for i in range(x_len)]
         neigbhours_list = [x[0] for x in tmp]
         neighbours_dist = [x[1] for x in tmp]
         neighbours_len = [len(x) for x in neigbhours_list]
@@ -172,7 +175,7 @@ class GeneticAtack(object):
                 neighbours_len[i] = 0
         w_select_probs = neighbours_len / np.sum(neighbours_len)
         tmp = [glove_utils.pick_most_similar_words(
-            x_orig[i], self.dist_mat, self.top_n, 0.5) for i in range(x_len)]
+            self.compute_dist(x_orig[i]), self.top_n, 0.5) for i in range(x_len)]
         neigbhours_list = [x[0] for x in tmp]
         neighbours_dist = [x[1] for x in tmp]
         pop = self.generate_population(
@@ -188,7 +191,7 @@ class GeneticAtack(object):
             l_tensor = l_tensor.to(self.device)
             self.batch_model.eval()
             with torch.no_grad():
-              pop_preds = self.batch_model.pred(pop_tensor, l_tensor).cpu().detach().numpy()
+              pop_preds = self.batch_model.pred(pop_tensor, l_tensor)[1].cpu().detach().numpy()
 
             
 #            pop_preds = self.batch_model.predict(self.sess, np.array(pop))

@@ -32,7 +32,7 @@ import lm_utils
 if not os.path.exists('aux_files'):
     import build_embeddings
 from data_cluster_seg import Data_infor
-
+from compute_dist import compute_dis
 from data_sampler import data_infor
 from pre_processing import pre_processing
 from transformers import BertModel, BertTokenizer
@@ -84,12 +84,12 @@ parser.add_argument('--tokenizer',
                     help = 'Pre-processing tokenizer',
                     default = 'bert')
 
+# parser.add_argument('--file_path',
+#                     help = 'Save path',
+#                     default = '/lustre/scratch/scratch/ucabdc3/lstm_attack')#
 parser.add_argument('--file_path',
-                    help = 'Save path',
-                    default = '/lustre/scratch/scratch/ucabdc3/lstm_attack')#
-#parser.add_argument('--file_path',
-#                    help = 'File path',
-#                    default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
+                   help = 'File path',
+                   default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
 def data_loading(test_text, test_target, SAMPLE_SIZE):
     
     dataset = data_infor(test_text, test_target)
@@ -120,9 +120,9 @@ def run():
 #    skip_list = np.load('aux_files/missed_embeddings_counter_%d.npy' %MAX_VOCAB_SIZE)
     embedding_matrix = np.load('aux_files/embeddings_glove_%d.npy' %(MAX_VOCAB_SIZE))
     embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
-    dist = np.load(('aux_files/dist_counter_%d.npy' %(MAX_VOCAB_SIZE)))
-    dist[0,:] = 100000
-    dist[:,0] = 100000
+    # dist = np.load(('aux_files/dist_counter_%d.npy' %(MAX_VOCAB_SIZE)))
+    # dist[0,:] = 100000
+    # dist[:,0] = 100000
 #    goog_lm = LM()
     
     # pytorch
@@ -180,7 +180,7 @@ def run():
     
     
     lstm_size = 128
-    rnn_state_save = os.path.join(file_path,'best_lstm_0_73_0_0005')
+    rnn_state_save = os.path.join(file_path,'best_bert_0.8_0.001_bert')
     model = bert_lstm(bert, 2, True, nlayer, lstm_size, True, 0.73)# batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=True)
     model.eval()
     model.load_state_dict(torch.load(rnn_state_save))
@@ -192,12 +192,12 @@ def run():
 
     with torch.no_grad():
       for batch_index, (seqs, length, target) in enumerate(all_test_loader_bert):
-        seqs, target, length = seqs.to(device), target.to(device), length.to(device)
         seqs = seqs.type(torch.LongTensor)
         len_order = torch.argsort(length, descending = True)
         length = length[len_order]
         seqs = seqs[len_order]
         target = target[len_order]
+        seqs, target, length = seqs.to(device), target.to(device), length.to(device)
 
         output = model.pred(seqs, length)
         test_pred = torch.cat((test_pred, output.cpu()), dim = 0)
@@ -225,7 +225,7 @@ def run():
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
     neighbour_model.to(device)
     lm_model = gpt_2_get_words_probs()
-    ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, dist,
+    ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, compute_dis,
                lm_model, tokenizer = tokenizer, max_iters = max_iters, dataset = dataset,
                pop_size = pop_size, n1 = n1, n2 = n2,n_prefix = n_prefix, 
                n_suffix = n_suffix, use_lm = True, use_suffix = True)
@@ -250,14 +250,14 @@ def run():
       seq_orig_label = np.load(seq_orig_label_path).tolist()
       word_varied = np.load(word_varied_path, allow_pickle = True).tolist()
       n = len(seq_success)
-    
+# 传输cuda的顺序; SEQ to numpy
     for order, (seq, l, target) in enumerate(test_loader_bert):
-    
+
       if order>=order_pre:
         print('Sequence number:{}'.format(order))
         seq_len = np.sum(np.sign(seq.numpy()))
-        seq, l = seq.to(device), l.to(device)
         seq = seq.type(torch.LongTensor)
+        seq, l = seq.to(device), l.to(device)
         model.eval()
         with torch.no_grad():
           orig_pred = np.argmax(model.pred(seq, l).cpu().detach().numpy())
@@ -271,9 +271,9 @@ def run():
           continue
     
         print('Length of sentence: {}, Number of samples:{}'.format(l.item(), n+1))
-        seq_orig.append(seq[0].numpy())
+        seq_orig.append(seq[0].cpu().detach().numpy())
         seq_orig_label.append(target.numpy()[0])
-        target = 1-target.numpy()[0]
+        target = int(1-target.numpy()[0])
         seq_success.append(ga_attack.attack(seq, target, l.type(torch.LongTensor)))
         
         if None not in np.array(seq_success[n]):
