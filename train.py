@@ -166,7 +166,7 @@ def run():
     batch_model.load_state_dict(torch.load(rnn_state_save))
     batch_model.to(device)
     
-    neighbour_model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=bidirection)
+    neighbour_model = SentimentAnalysis(batch_size=n1, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=2, bidirection=bidirection)
     
     neighbour_model.eval()
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
