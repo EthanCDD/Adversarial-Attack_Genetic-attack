@@ -146,8 +146,8 @@ def run():
         seqs = seqs[len_order]
         target = target[len_order]
 
-        output = model.pred(seqs, length)
-        test_pred = torch.cat((test_pred, output.cpu()), dim = 0)
+        output, pred_out = model.pred(seqs, length)
+        test_pred = torch.cat((test_pred, pred_out.cpu()), dim = 0)
         test_targets = torch.cat((test_targets, target.type(torch.float).cpu()))
 
       accuracy = model.evaluate_accuracy(test_pred.numpy(), test_targets.numpy())
@@ -204,7 +204,7 @@ def run():
         seq = seq.type(torch.LongTensor)
         model.eval()
         with torch.no_grad():
-          orig_pred = np.argmax(model.pred(seq, l).cpu().detach().numpy())
+          orig_pred = np.argmax(model.pred(seq, l)[1].cpu().detach().numpy())
         if orig_pred != target.numpy()[0]:
           print('Wrong original prediction')
           print('----------------------')
@@ -238,6 +238,30 @@ def run():
         
         if n>TEST_SIZE:
           break 
+        
+        
+#        orig_list.append(seq[0].numpy())
+#        x_adv = ga_attack.attack( seq, target, l)
+#        adv_list.append(x_adv)
+#        if x_adv is None:
+#            print('%d failed' %(order))
+#            dist_list.append(100000)
+#        else:
+#            num_changes = np.sum(seq[0].numpy() != x_adv)
+#            print('%d - %d changed.' %(order, num_changes))
+#            dist_list.append(num_changes)
+#            # display_utils.visualize_attack(sess, model, dataset, x_orig, x_adv)
+#        print('--------------------------')
+        
+#        
+#        n += 1
+#        if n>TEST_SIZE:
+#          break
+#      orig_len = [np.sum(np.sign(x)) for x in orig_list]
+#      normalized_dist_list = [dist_list[i]/orig_len[i] for i in range(len(orig_list)) ]
+#      SUCCESS_THRESHOLD  = 0.25
+#      successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
+#      print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
         
     
 

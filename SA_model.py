@@ -34,7 +34,7 @@ class SentimentAnalysis(nn.Module):
     packed_seqs = pack_padded_sequence(padded_seqs, l)
     output, (h, c) = self.lstm(packed_seqs)
     padded_output = pad_packed_sequence(output)
-    lstm_output = torch.mean(padded_output[0], dim = 0)
+    lstm_output = torch.sum(padded_output[0], dim = 0)/l.unsqueeze(1)
     lstm_output = self.dropout(lstm_output)
     output = self.fc(lstm_output)
     pred_out = self.softmax(output)
