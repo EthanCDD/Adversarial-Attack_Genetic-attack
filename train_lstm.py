@@ -77,9 +77,6 @@ def train():
     padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
     padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
 
-    # pytorch
-    padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
-    padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
     # TrainSet
     data_set = Data_infor(padded_train_raw, dataset.train_y)
     num_train = len(data_set)
@@ -107,12 +104,19 @@ def train():
 
     rnn = SentimentAnalysis(batch_size, embedding_matrix, hidden_size, kept_prob, nlayer, bidirection)
     rnn = rnn.to(device)
-    
+#    class my_loss(nn.Module):
+#      def __init__(self):
+#        super().__init__()
+#        self.relu = nn.ReLU()
+#          
+#      def forward(self, x, y):
+#        loss = torch.mean((1-y)*x+torch.log(1+torch.exp(-abs(x)))+self.relu(-x))
+#        return loss
     criterion = nn.CrossEntropyLoss()
     optimiser = torch.optim.AdamW(rnn.parameters(), lr = learning_rate)
     
     
-    epoches = 200
+    epoches = 20
     best_epoch = 0
     best_acc = 0
     patience = 15

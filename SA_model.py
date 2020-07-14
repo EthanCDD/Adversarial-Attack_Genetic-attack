@@ -49,6 +49,7 @@ class SentimentAnalysis(nn.Module):
   #   return h, c
 
   def evaluate_accuracy(self, pred, target):
+    # v = np.sum(np.argmax(pred, 1) == np.argmax(target, 1))
     v = np.sum(np.argmax(pred, 1) == target)
     return v/len(target)
 

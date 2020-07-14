@@ -16,6 +16,10 @@ class Data_infor(Dataset):
     seq = self.seqs[indx]
     l = np.sum(np.sign(self.seqs[indx]))
     label = self.target[indx]
+    # if label == 1:
+    #   label = np.array([0, 1])
+    # else:
+    #   label = np.array([1, 0])
     return seq, l, label
 
   def __len__(self):

@@ -61,7 +61,7 @@ class IMDBDataset(object):
             self.inv_full_dict[idx] = word 
         print('Dataset built !')
         
-    def save(self, path='/lustre/scratch/scratch/ucabdc3/lstm_attack/imdb'):
+    def save(self, path='imdb'):
         with open(path + '_train_set.pickle', 'wb') as f:
             pickle.dump((self.train_text, self.train_seqs, self.train_y) , f)
 
