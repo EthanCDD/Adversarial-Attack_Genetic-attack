@@ -155,19 +155,19 @@ def run():
 
     
     
-    n1 = 10
-    n2 = 6
+    n1 = 8
+    n2 = 4
     pop_size = 60
     max_iters = 20
     n_prefix = 5
     n_suffix = 5
-    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=nlayer, bidirection=bidirection)
+    batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.8, num_layers=nlayer, bidirection=bidirection)
     
     batch_model.eval()
     batch_model.load_state_dict(torch.load(rnn_state_save))
     batch_model.to(device)
     
-    neighbour_model = SentimentAnalysis(batch_size=n1, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=nlayer, bidirection=bidirection)
+    neighbour_model = SentimentAnalysis(batch_size=n1, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.8, num_layers=nlayer, bidirection=bidirection)
     
     neighbour_model.eval()
     neighbour_model.load_state_dict(torch.load(rnn_state_save))

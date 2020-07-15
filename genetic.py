@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import glove_utils
+import torch
+from lm_scorer.models.auto import AutoLMScorer as LMScorer
 
 class GeneticAttack_pytorch(object):
     def __init__(self, model, batch_model, neighbour_model, compute_dis,
@@ -29,6 +31,8 @@ class GeneticAttack_pytorch(object):
         self.use_suffix = use_suffix
         self.temp = 0.3
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        batch_size = 1
+        self.scorer = LMScorer.from_pretrained("gpt2", device=self.device, batch_size=batch_size)
 
     def do_replace(self, x_cur, pos, new_word):
         x_new = x_cur.copy()
@@ -103,21 +107,31 @@ class GeneticAttack_pytorch(object):
           elif pos>self.n_prefix:
             prefix = [self.dataset.inv_dict[x_cur[pos-i-1]] for i in range(self.n_prefix)[::-1]]
     
-    
+          
     #      orig_word = self.i_w_dict[seq[loc]]
           if self.use_suffix and pos < x_len-self.n_suffix and x_cur[pos+self.n_suffix]!=0:
             suffix = [self.dataset.inv_dict[x_cur[pos+i]] for i in range(1,self.n_suffix+1)]
           elif self.use_suffix and pos < x_len:
             suffix = [self.dataset.inv_dict[x_cur[pos+i]] for i in range(1,x_len-pos)]
-    
+          # print(self.dataset.inv_dict[x_orig[pos]])
           # print(prefix, suffix)
           word_list = [prefix+[self.dataset.inv_dict[w]]+suffix if w in self.dataset.inv_dict else prefix+['UNK']+suffix for w in replace_list[:self.top_n1]]
-    #      replace_words_orig = [self.dataset.inv_dict[w] if w in self.dataset.inv_dict else 'UNK' for w in replace_list[:self.top_n1]] + [orig_word]
+    # #      replace_words_orig = [self.dataset.inv_dict[w] if w in self.dataset.inv_dict else 'UNK' for w in replace_list[:self.top_n1]] + [orig_word]
          
+          
+
+          # print(seqs)
+          # # library
+          # seqs = [self.seq_list(seq) for seq in word_list]
+          # replace_words_scores = self.scorer.sentence_score(seqs, reduce = 'prod')
+          # new_words_scores = np.array(replace_words_scores)
+          # rank_replaces_by_lm = np.argsort(new_words_scores)[::-1]
+
           replace_words_scores = self.lm.get_probs(word_list)
-            
-          new_words_scores = np.array(replace_words_scores)
-          rank_replaces_by_lm = np.argsort(new_words_scores)
+          rank_replaces_by_lm = np.argsort(replace_words_scores)
+
+          # print(rank_replaces_by_lm)
+          # print(np.array(seqs)[rank_replaces_by_lm])
           filtered_words_idx = rank_replaces_by_lm[self.top_n2:]
             # print(filtered_words_idx)
           new_x_scores[filtered_words_idx] = -10000000
@@ -125,6 +139,13 @@ class GeneticAttack_pytorch(object):
         if (np.max(new_x_scores) > 0):
             return new_x_list[np.argsort(new_x_scores)[-1]]
         return x_cur
+    def seq_list(self, prefix):
+      sentence = ''
+
+      for word in prefix:
+          sentence += word + ' '
+      sentence = sentence.strip()
+      return sentence
 
     def perturb(self, x_cur, x_orig, neigbhours, neighbours_dist,  w_select_probs, target):
         # Pick a word that is not modified and is not UNK
