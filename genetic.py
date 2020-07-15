@@ -47,7 +47,7 @@ class GeneticAttack_pytorch(object):
         l_tensor = x_len*torch.ones([l_seq_list])
         l_tensor = l_tensor.to(self.device)
         with torch.no_grad():
-            new_x_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor)[1].cpu().detach().numpy()
+            new_x_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor, False)[1].cpu().detach().numpy()
 
         # Keep only top_n
         # replace_list = replace_list[:self.top_n]
@@ -62,7 +62,7 @@ class GeneticAttack_pytorch(object):
         l_tensor = torch.tensor([x_len]).to(self.device)
         self.model.eval()
         with torch.no_grad():
-          orig_score = self.model.pred(seq_tensor, l_tensor)[1].cpu().detach().numpy()[0, target]
+          orig_score = self.model.pred(seq_tensor, l_tensor, False)[1].cpu().detach().numpy()[0, target]
         new_x_scores = new_x_scores - orig_score
         
         # Eliminate not that clsoe words
@@ -191,7 +191,7 @@ class GeneticAttack_pytorch(object):
             l_tensor = l_tensor.to(self.device)
             self.batch_model.eval()
             with torch.no_grad():
-              pop_preds = self.batch_model.pred(pop_tensor, l_tensor)[1].cpu().detach().numpy()
+              pop_preds = self.batch_model.pred(pop_tensor, l_tensor, False)[1].cpu().detach().numpy()
 
             
 #            pop_preds = self.batch_model.predict(self.sess, np.array(pop))

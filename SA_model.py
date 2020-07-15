@@ -58,6 +58,6 @@ class SentimentAnalysis(nn.Module):
     v = np.sum(np.argmax(pred, 1) == target)
     return v/len(target)
 
-  def pred(self, test_seq, l):
-    pred = self.forward(test_seq, l)
+  def pred(self, test_seq, l, is_train):
+    pred = self.forward(test_seq, l, is_train)
     return pred

@@ -27,7 +27,7 @@ if not os.path.exists('aux_files'):
 from compute_dist import compute_dis
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
-from genetic_perplexity import GeneticAttack_pytorch
+from genetic import GeneticAttack_pytorch
 from gpt_perplexity import gpt_2_get_words_probs
 import argparse
 
@@ -126,7 +126,7 @@ def run():
     all_test_loader  = DataLoader(all_test_set, batch_size = 128, shuffle = True)
     
     lstm_size = 128
-    rnn_state_save = os.path.join(file_path,'best_sa_vali')
+    rnn_state_save = os.path.join(file_path,'best_lstm_0.73_0.001_0.8959.001_save')
     model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=nlayer, bidirection=bidirection)
     model.eval()
     model.load_state_dict(torch.load(rnn_state_save))
@@ -146,7 +146,7 @@ def run():
         seqs = seqs[len_order]
         target = target[len_order]
 
-        output, pred_out = model.pred(seqs, length)
+        output, pred_out = model.pred(seqs, length, False)
         test_pred = torch.cat((test_pred, pred_out.cpu()), dim = 0)
         test_targets = torch.cat((test_targets, target.type(torch.float).cpu()))
 
@@ -155,12 +155,12 @@ def run():
 
     
     
-    n1 = 8
-    n2 = 4
+    n1 = 10
+    n2 = 6
     pop_size = 60
-    max_iters = 30
-    n_prefix = 6
-    n_suffix = 6
+    max_iters = 20
+    n_prefix = 5
+    n_suffix = 5
     batch_model = SentimentAnalysis(batch_size=pop_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=nlayer, bidirection=bidirection)
     
     batch_model.eval()
@@ -181,19 +181,22 @@ def run():
     
     
     TEST_SIZE = args.test_size
-    order_pre = 0
+    order_pre = 129
     n = 0
     seq_success = []
     seq_orig = []
     seq_orig_label = []
     word_varied = []
+    orig_list = []
+    adv_list =[]
+    dist_list = []
     
-    if order_pre != 0:
-      seq_success = np.load(os.path.join(save_path,'seq_success.npy'), allow_pickle = True).tolist()
-      seq_orig = np.load(os.path.join(save_path,'seq_orig.npy')).tolist()
-      seq_orig_label = np.load(os.path.join(save_path,'seq_orig_label.npy')).tolist()
-      word_varied = np.load(os.path.join(save_path,'word_varied.npy'), allow_pickle = True).tolist()
-      n = len(seq_success)
+    # if order_pre != 0:
+    #   seq_success = np.load(os.path.join(save_path,'seq_success.npy'), allow_pickle = True).tolist()
+    #   seq_orig = np.load(os.path.join(save_path,'seq_orig.npy')).tolist()
+    #   seq_orig_label = np.load(os.path.join(save_path,'seq_orig_label.npy')).tolist()
+    #   word_varied = np.load(os.path.join(save_path,'word_varied.npy'), allow_pickle = True).tolist()
+    #   n = len(seq_success)
     
     for order, (seq, l, target) in enumerate(test_loader):
     
@@ -204,7 +207,8 @@ def run():
         seq = seq.type(torch.LongTensor)
         model.eval()
         with torch.no_grad():
-          orig_pred = np.argmax(model.pred(seq, l)[1].cpu().detach().numpy())
+          preds = model.pred(seq, l, False)[1]
+          orig_pred = np.argmax(preds.cpu().detach().numpy())
         if orig_pred != target.numpy()[0]:
           print('Wrong original prediction')
           print('----------------------')
@@ -215,53 +219,58 @@ def run():
           continue
     
         print('Length of sentence: {}, Number of samples:{}'.format(l.item(), n+1))
+        print(preds)
         seq_orig.append(seq[0].numpy())
         seq_orig_label.append(target.numpy()[0])
         target = 1-target.numpy()[0]
-        seq_success.append(ga_attack.attack(seq, target, l))
+        # seq_success.append(ga_attack.attack(seq, target, l))
         
-        if None not in np.array(seq_success[n]):
-          w_be = [dataset.inv_dict[seq_orig[n][i]] for i in list(np.where(seq_success[n] != seq_orig[n])[0])]
-          w_to = [dataset.inv_dict[seq_success[n][i]] for i in list(np.where(seq_success[n] != seq_orig[n])[0])]
-          for i in range(len(w_be)):
-            print('{} ----> {}'.format(w_be[i], w_to[i]))
-          word_varied.append([w_be]+[w_to])
+        # if None not in np.array(seq_success[n]):
+        #   w_be = [dataset.inv_dict[seq_orig[n][i]] for i in list(np.where(seq_success[n] != seq_orig[n])[0])]
+        #   w_to = [dataset.inv_dict[seq_success[n][i]] for i in list(np.where(seq_success[n] != seq_orig[n])[0])]
+        #   for i in range(len(w_be)):
+        #     print('{} ----> {}'.format(w_be[i], w_to[i]))
+        #   word_varied.append([w_be]+[w_to])
+        # else:
+        #   print('Fail')
+        # print('----------------------')
+        # n += 1
+        
+        # np.save(os.path.join(save_path,'seq_success_1000.npy'), np.array(seq_success))
+        # np.save(os.path.join(save_path,'seq_orig_1000.npy'), np.array(seq_orig))
+        # np.save(os.path.join(save_path,'seq_orig_label_1000.npy'), np.array(seq_orig_label))
+        # np.save(os.path.join(save_path,'word_varied_1000.npy'), np.array(word_varied))
+        
+        # if n>TEST_SIZE:
+        #   break 
+        
+        
+        orig_list.append(seq[0].numpy())
+        x_adv = ga_attack.attack( seq, target, l)
+        adv_list.append(x_adv)
+        if x_adv is None:
+            print('%d failed' %(order))
+            dist_list.append(100000)
         else:
-          print('Fail')
-        print('----------------------')
+            num_changes = np.sum(seq[0].numpy() != x_adv)
+            print('%d - %d changed.' %(order, num_changes))
+            dist_list.append(num_changes)
+            # display_utils.visualize_attack(sess, model, dataset, x_orig, x_adv)
+        print('--------------------------')
+          
+        
         n += 1
-        
-        np.save(os.path.join(save_path,'seq_success_1000.npy'), np.array(seq_success))
-        np.save(os.path.join(save_path,'seq_orig_1000.npy'), np.array(seq_orig))
-        np.save(os.path.join(save_path,'seq_orig_label_1000.npy'), np.array(seq_orig_label))
-        np.save(os.path.join(save_path,'word_varied_1000.npy'), np.array(word_varied))
-        
         if n>TEST_SIZE:
-          break 
+          break
+        orig_len = [np.sum(np.sign(x)) for x in orig_list]
+        normalized_dist_list = [dist_list[i]/orig_len[i] for i in range(len(orig_list)) ]
+        SUCCESS_THRESHOLD  = 0.25
+        successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
+        print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
+        SUCCESS_THRESHOLD  = 0.2
+        successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
+        print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
         
-        
-#        orig_list.append(seq[0].numpy())
-#        x_adv = ga_attack.attack( seq, target, l)
-#        adv_list.append(x_adv)
-#        if x_adv is None:
-#            print('%d failed' %(order))
-#            dist_list.append(100000)
-#        else:
-#            num_changes = np.sum(seq[0].numpy() != x_adv)
-#            print('%d - %d changed.' %(order, num_changes))
-#            dist_list.append(num_changes)
-#            # display_utils.visualize_attack(sess, model, dataset, x_orig, x_adv)
-#        print('--------------------------')
-        
-#        
-#        n += 1
-#        if n>TEST_SIZE:
-#          break
-#      orig_len = [np.sum(np.sign(x)) for x in orig_list]
-#      normalized_dist_list = [dist_list[i]/orig_len[i] for i in range(len(orig_list)) ]
-#      SUCCESS_THRESHOLD  = 0.25
-#      successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
-#      print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
         
     
 
