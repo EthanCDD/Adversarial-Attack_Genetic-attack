@@ -58,7 +58,7 @@ class GeneticAttack_pytorch(object):
         #     self.sess, x_cur[np.newaxis, :])[1][0, target]
         
         new_x_scores = new_x_preds[:, target]
-        seq_tensor = torch.tensor(np.expand_dims(x_orig, axis = 0)).type(torch.LongTensor).to(self.device)
+        seq_tensor = torch.tensor(np.expand_dims(x_cur, axis = 0)).type(torch.LongTensor).to(self.device)
         l_tensor = torch.tensor([x_len]).to(self.device)
         self.model.eval()
         with torch.no_grad():

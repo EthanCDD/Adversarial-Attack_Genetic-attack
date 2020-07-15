@@ -16,26 +16,31 @@ class SentimentAnalysis(nn.Module):
     self.hidden_size = hidden_size
     self.num_layers = num_layers
     self.embed = nn.Embedding.from_pretrained(embedding_matrix) 
-    
+    # self.is_train = is_train
     self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size = hidden_size, num_layers = num_layers, bidirectional=bidirection)
     
     self.fc = nn.Linear(hidden_size if bidirection==False else hidden_size*2, 2)
     self.softmax = nn.Softmax(1)
     self.dropout = nn.Dropout(1-kept_prob)
 
-  def forward(self, seqs, l):
+  def forward(self, seqs, l, is_train):
     # h_0, c_0 = self.h_c_initialisation(seqs.shape[0])
     # h_0, c_0 = h_0.cuda(), c_0.cuda()
     seqs = seqs.permute(1,0)
 
     seqs = seqs.cuda()
     padded_seqs = self.embed(seqs).type(torch.float)
-    padded_seqs = self.dropout(padded_seqs)
+    if is_train:
+      
+      padded_seqs = self.dropout(padded_seqs)
     packed_seqs = pack_padded_sequence(padded_seqs, l)
     output, (h, c) = self.lstm(packed_seqs)
     padded_output = pad_packed_sequence(output)
     lstm_output = torch.sum(padded_output[0], dim = 0)/l.unsqueeze(1)
-    lstm_output = self.dropout(lstm_output)
+    # output, (h, c) = self.lstm(padded_seqs)
+    # lstm_output = torch.mean(output, dim = 0)
+    if is_train:
+      lstm_output = self.dropout(lstm_output)
     output = self.fc(lstm_output)
     pred_out = self.softmax(output)
     return output, pred_out
