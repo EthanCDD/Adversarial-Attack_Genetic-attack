@@ -24,17 +24,16 @@ class SentimentAnalysis(nn.Module):
     self.dropout = nn.Dropout(1-kept_prob)
 
   def forward(self, seqs, l, is_train):
-    # h_0, c_0 = self.h_c_initialisation(seqs.shape[0])
-    # h_0, c_0 = h_0.cuda(), c_0.cuda()
+    h_0, c_0 = self.h_c_initialisation(seqs.shape[0])
+    h_0, c_0 = h_0.cuda(), c_0.cuda()
     seqs = seqs.permute(1,0)
 
     seqs = seqs.cuda()
     padded_seqs = self.embed(seqs).type(torch.float)
     if is_train:
-      
       padded_seqs = self.dropout(padded_seqs)
     packed_seqs = pack_padded_sequence(padded_seqs, l)
-    output, (h, c) = self.lstm(packed_seqs)
+    output, (h, c) = self.lstm(packed_seqs, (h_0, c_0))
     padded_output = pad_packed_sequence(output)
     lstm_output = torch.sum(padded_output[0], dim = 0)/l.unsqueeze(1)
     # output, (h, c) = self.lstm(padded_seqs)
@@ -45,13 +44,13 @@ class SentimentAnalysis(nn.Module):
     pred_out = self.softmax(output)
     return output, pred_out
     
-  # def h_c_initialisation(self, batch):
-  #   h = torch.zeros(self.num_layers, batch, self.hidden_size)
-  #   c = torch.zeros(self.num_layers, batch, self.hidden_size)
+  def h_c_initialisation(self, batch):
+    h = torch.zeros(self.num_layers, batch, self.hidden_size)
+    c = torch.zeros(self.num_layers, batch, self.hidden_size)
 
-  #   h = h.type(torch.float)
-  #   c = c.type(torch.float)
-  #   return h, c
+    h = h.type(torch.float)
+    c = c.type(torch.float)
+    return h, c
 
   def evaluate_accuracy(self, pred, target):
     # v = np.sum(np.argmax(pred, 1) == np.argmax(target, 1))

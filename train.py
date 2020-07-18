@@ -73,7 +73,10 @@ parser.add_argument('--test_size',
                     help = 'The number of tested examples',
                     type = int,
                     default = 1000)
-
+parser.add_argument('--use_lm', 
+                    help = 'Language model application',
+                    type = str2bool,
+                    default = True)
 parser.add_argument('--file_path',
                     help = 'Save path',
                     default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
@@ -103,7 +106,7 @@ def run():
 #    goog_lm = LM()
     
     # pytorch
-    max_len = 250
+    max_len = 100
 #    padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
     padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
 #    # TrainSet
@@ -126,9 +129,10 @@ def run():
     all_test_loader  = DataLoader(all_test_set, batch_size = 128, shuffle = True)
     
     lstm_size = 128
-    rnn_state_save = os.path.join(file_path,'best_lstm_0.73_0.001_0.8959.001_save')
-    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.73, num_layers=nlayer, bidirection=bidirection)
-    model.eval()
+    rnn_state_save = os.path.join(file_path,'best_lstm_0.8_0.001_test2')
+
+    model = SentimentAnalysis(batch_size=batch_size, embedding_matrix = embedding_matrix, hidden_size = lstm_size, kept_prob = 0.8, num_layers=nlayer, bidirection=bidirection)
+    
     model.load_state_dict(torch.load(rnn_state_save))
     model = model.to(device)
     
@@ -173,15 +177,15 @@ def run():
     neighbour_model.load_state_dict(torch.load(rnn_state_save))
     neighbour_model.to(device)
     lm_model = gpt_2_get_words_probs()
-    
+    use_lm = args.use_lm
     ga_attack = GeneticAttack_pytorch(model, batch_model, neighbour_model, compute_dis,
                lm_model, max_iters = max_iters, dataset = dataset,
                pop_size = pop_size, n1 = n1, n2 = n2, n_prefix = n_prefix,
-               n_suffix = n_suffix, use_lm = True, use_suffix = True)
+               n_suffix = n_suffix, use_lm = use_lm, use_suffix = True)
     
     
     TEST_SIZE = args.test_size
-    order_pre = 129
+    order_pre = 0
     n = 0
     seq_success = []
     seq_orig = []
