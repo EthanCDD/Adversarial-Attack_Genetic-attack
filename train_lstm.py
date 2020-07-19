@@ -52,6 +52,10 @@ parser.add_argument('--kept_prob',
                     help = 'Probability to keep',
                     type = float,
                     default = 0.73)
+parser.add_argument('--max_len',
+                    help = 'Maximum length of sentence',
+                    type = int,
+                    default = 100) 
 parser.add_argument('--save_path',
                     help = 'Save path',
                     default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
@@ -73,7 +77,7 @@ def train():
     embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
     
     # pytorch
-    max_len = 250
+    max_len = args.max_len
     padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
     padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
 
