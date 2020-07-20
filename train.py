@@ -214,14 +214,14 @@ def run():
           preds = model.pred(seq, l, False)[1]
           orig_pred = np.argmax(preds.cpu().detach().numpy())
         if orig_pred != target.numpy()[0]:
-          print('Wrong original prediction')
-          print('----------------------')
+#          print('Wrong original prediction')
+#          print('----------------------')
           continue
         if seq_len > 100:
-          print('Sequence is too long')
-          print('----------------------')
+#          print('Sequence is too long')
+#          print('----------------------')
           continue
-    
+        print('Sequence number:{}'.format(order))
         print('Length of sentence: {}, Number of samples:{}'.format(l.item(), n+1))
         print(preds)
         seq_orig.append(seq[0].numpy())

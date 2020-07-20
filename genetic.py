@@ -29,7 +29,7 @@ class GeneticAttack_pytorch(object):
         self.top_n2 = n2
         self.use_lm = use_lm
         self.use_suffix = use_suffix
-        self.temp = 0.3
+        self.temp = 0.0005
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         batch_size = 1
         self.scorer = LMScorer.from_pretrained("gpt2", device=self.device, batch_size=batch_size)
@@ -220,9 +220,24 @@ class GeneticAttack_pytorch(object):
             print('\t\t', i, ' -- ', np.max(pop_scores))
             pop_ranks = np.argsort(pop_scores)[::-1]
             top_attack = pop_ranks[0]
-
-            logits = np.exp(pop_scores / self.temp)
+            ampl = pop_scores / self.temp
+            # print(ampl)
+            covariance = np.cov(ampl)
+#            print(covariance)
+            if covariance>10e-4:
+              mean = np.mean(ampl)
+              # print(mean)
+              ampl_update = (ampl-mean)/np.sqrt(covariance+0.001)
+              # print(ampl_update)
+              logits = np.exp(ampl_update)
+            else:
+              if np.max(ampl)>100:
+                ampl = ampl/(np.max(ampl)/5)
+              
+              logits = np.exp(ampl)
+            # logits = np.exp(ampl)
             select_probs = logits / np.sum(logits)
+            # print(select_probs)
 
             if np.argmax(pop_preds[top_attack, :]) == target:
                 return pop[top_attack]
