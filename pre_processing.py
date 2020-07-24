@@ -11,8 +11,9 @@ from collections import OrderedDict, defaultdict
 
 
 class pre_processing(object):
-  def __init__(self, path, max_vocab):
+  def __init__(self, path, max_vocab, length):
     # extract all dataset
+    self.l = length
     self.max_vocab = max_vocab
     self.train_path_pos = os.path.join(path, 'train/pos')
     self.train_path_neg = os.path.join(path, 'train/neg')
@@ -127,17 +128,17 @@ class pre_processing(object):
     return self.train_seqs, self.test_seqs
 
   def bert_tokenize(self, tokenizer):
-    self.train_pos_tokens = [tokenizer.tokenize(seq) for seq in self.train_pos_seqs]
+    self.train_pos_tokens = [tokenizer.tokenize(seq)[:self.l] for seq in self.train_pos_seqs]
     self.train_pos_labels = np.ones((1, len(self.train_pos_tokens)))
-    self.train_neg_tokens = [tokenizer.tokenize(seq) for seq in self.train_neg_seqs]
+    self.train_neg_tokens = [tokenizer.tokenize(seq)[:self.l] for seq in self.train_neg_seqs]
     self.train_neg_labels = np.zeros((1, len(self.train_neg_tokens)))
 
     self.all_train = self.train_pos_tokens + self.train_neg_tokens
     self.all_train_labels = np.concatenate((self.train_pos_labels, self.train_neg_labels),1)
 
-    self.test_pos_tokens = [tokenizer.tokenize(seq) for seq in self.test_pos_seqs]
+    self.test_pos_tokens = [tokenizer.tokenize(seq)[:self.l] for seq in self.test_pos_seqs]
     self.test_pos_labels = np.ones((1, len(self.test_pos_tokens)))
-    self.test_neg_tokens = [tokenizer.tokenize(seq) for seq in self.test_neg_seqs]
+    self.test_neg_tokens = [tokenizer.tokenize(seq)[:self.l] for seq in self.test_neg_seqs]
     self.test_neg_labels = np.zeros((1, len(self.test_neg_tokens)))
 
     self.all_test_labels = np.concatenate((self.test_pos_labels,self.test_neg_labels), 1)

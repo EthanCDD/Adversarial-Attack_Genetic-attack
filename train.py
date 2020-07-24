@@ -205,7 +205,7 @@ def run():
     for order, (seq, l, target) in enumerate(test_loader):
     
       if order>=order_pre:
-        print('Sequence number:{}'.format(order))
+#        print('Sequence number:{}'.format(order))
         seq_len = np.sum(np.sign(seq.numpy()))
         seq, l = seq.to(device), l.to(device)
         seq = seq.type(torch.LongTensor)
@@ -269,10 +269,10 @@ def run():
         orig_len = [np.sum(np.sign(x)) for x in orig_list]
         normalized_dist_list = [dist_list[i]/orig_len[i] for i in range(len(orig_list)) ]
         SUCCESS_THRESHOLD  = 0.25
-        successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
+        successful_attacks = [x <= SUCCESS_THRESHOLD for x in normalized_dist_list]
         print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
         SUCCESS_THRESHOLD  = 0.2
-        successful_attacks = [x < SUCCESS_THRESHOLD for x in normalized_dist_list]
+        successful_attacks = [x <= SUCCESS_THRESHOLD for x in normalized_dist_list]
         print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
         
         

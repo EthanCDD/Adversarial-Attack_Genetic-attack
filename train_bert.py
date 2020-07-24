@@ -126,7 +126,7 @@ def run():
 #    goog_lm = LM()
     
     # pytorch
-    max_len = 250
+    max_len = 100
 #    padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
 #    padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
 #    # TrainSet
@@ -150,7 +150,7 @@ def run():
         data_processed.bert_tokenize(tokenizer)
         train_sequences, test_sequences = data_processed.bert_indx(tokenizer)
         print('BERT tokenizer')
-    train_text_init, test_text_init = data_processed.numerical(tokenizer, train_sequences, test_sequences, max_len = 250)
+    train_text_init, test_text_init = data_processed.numerical(tokenizer, train_sequences, test_sequences, max_len = max_len)
     
         
 #    train_text = pad_sequences(train_text_init, maxlen = max_len, padding = 'post')
@@ -239,22 +239,22 @@ def run():
     seq_orig_label = []
     word_varied = []
 
-    seq_success_path = os.path.join(save_path,'seq_success_perplexity_bert.npy')
-    seq_orig_path = os.path.join(save_path,'seq_orig_perplexity_bert.npy')
-    seq_orig_label_path = os.path.join(save_path,'seq_orig_label_perplexity_bert.npy')
-    word_varied_path = os.path.join(save_path,'word_varied_perplexity_bert.npy')
+#    seq_success_path = os.path.join(save_path,'seq_success_perplexity_bert.npy')
+#    seq_orig_path = os.path.join(save_path,'seq_orig_perplexity_bert.npy')
+#    seq_orig_label_path = os.path.join(save_path,'seq_orig_label_perplexity_bert.npy')
+#    word_varied_path = os.path.join(save_path,'word_varied_perplexity_bert.npy')
     
-    if order_pre != 0:
-      seq_success = np.load(seq_success_path, allow_pickle = True).tolist()
-      seq_orig = np.load(seq_orig_path).tolist()
-      seq_orig_label = np.load(seq_orig_label_path).tolist()
-      word_varied = np.load(word_varied_path, allow_pickle = True).tolist()
-      n = len(seq_success)
+#    if order_pre != 0:
+#      seq_success = np.load(seq_success_path, allow_pickle = True).tolist()
+#      seq_orig = np.load(seq_orig_path).tolist()
+#      seq_orig_label = np.load(seq_orig_label_path).tolist()
+#      word_varied = np.load(word_varied_path, allow_pickle = True).tolist()
+#      n = len(seq_success)
 # 传输cuda的顺序; SEQ to numpy
     for order, (seq, l, target) in enumerate(test_loader_bert):
 
       if order>=order_pre:
-        print('Sequence number:{}'.format(order))
+        
         seq_len = np.sum(np.sign(seq.numpy()))
         seq = seq.type(torch.LongTensor)
         seq, l = seq.to(device), l.to(device)
@@ -262,14 +262,14 @@ def run():
         with torch.no_grad():
           orig_pred = np.argmax(model.pred(seq, l).cpu().detach().numpy())
         if orig_pred != target.numpy()[0]:
-          print('Wrong original prediction')
-          print('----------------------')
+#          print('Wrong original prediction')
+#          print('----------------------')
           continue
         if seq_len > 100:
-          print('Sequence is too long')
-          print('----------------------')
+#          print('Sequence is too long')
+#          print('----------------------')
           continue
-    
+        print('Sequence number:{}'.format(order))
         print('Length of sentence: {}, Number of samples:{}'.format(l.item(), n+1))
         seq_orig.append(seq[0].cpu().detach().numpy())
         seq_orig_label.append(target.numpy()[0])

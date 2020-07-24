@@ -41,12 +41,12 @@ class GeneticAttack_pytorch(object):
     self.i_w_dict = dataset.inv_dict
     self.dataset = dataset
     self.lm = lm_model
-    self.temp = 0.3
+    self.temp = 0.001
     self.max_iters = max_iters
     self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
 
-  def attack(self, seq, target, l, max_change = 0.4):
+  def attack(self, seq, target, l, max_change = 0.5):
     seq = seq.cpu().detach().numpy().squeeze()  #'''label of change; convert'''
     seq_adv = seq.copy()
     seq_len = np.sum(np.sign(seq))
@@ -79,14 +79,28 @@ class GeneticAttack_pytorch(object):
       l_tensor = l_tensor.to(self.device)
       self.batch_model.eval()
       with torch.no_grad():
-        pop_preds = self.batch_model.pred(pop_tensor, l_tensor).cpu().detach().numpy()
+        pop_preds = self.batch_model.pred(pop_tensor, l_tensor, False)[1].cpu().detach().numpy()
       
       pop_scores = pop_preds[:, target]
       print('\t\t', i, ' -- ', np.max(pop_scores))
       pop_ranks = np.argsort(pop_scores)[::-1]
       top_attack = pop_ranks[0]
-
-      logits = np.exp(pop_scores/self.temp)
+      ampl = pop_scores / self.temp
+      # print(ampl)
+      covariance = np.cov(ampl)
+#            print(covariance)
+      if covariance>10e-4:
+        mean = np.mean(ampl)
+        # print(mean)
+        ampl_update = (ampl-mean)/np.sqrt(covariance+0.001)
+        # print(ampl_update)
+        logits = np.exp(ampl_update)
+      else:
+        if np.max(ampl)>100:
+          ampl = ampl/(np.max(ampl)/5)
+        
+        logits = np.exp(ampl)
+      # logits = np.exp(ampl)
       select_probs = logits/np.sum(logits)
     
       if np.argmax(pop_preds[top_attack, :]) == target:
@@ -141,15 +155,15 @@ class GeneticAttack_pytorch(object):
     l_tensor = l_tensor.to(self.device)
     self.neighbour_model.eval()
     with torch.no_grad():
-      new_seq_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor).cpu().detach().numpy()
+      new_seq_preds = self.neighbour_model.pred(new_seq_list_tensor, l_tensor, False)[1].cpu().detach().numpy()
     # print(new_seq_preds)
     # print(target)
     new_seq_scores = new_seq_preds[:, target]
-    seq_tensor = torch.tensor(np.expand_dims(seq, axis = 0)).type(torch.LongTensor).to(self.device)
+    seq_tensor = torch.tensor(np.expand_dims(seq_cur, axis = 0)).type(torch.LongTensor).to(self.device)
     l_tensor = l.to(self.device)
     self.model.eval()
     with torch.no_grad():
-      orig_score = self.model.pred(seq_tensor, l_tensor).cpu().detach().numpy()[0, target]
+      orig_score = self.model.pred(seq_tensor, l_tensor, False)[1].cpu().detach().numpy()[0, target]
     new_seq_scores -= orig_score
     
     new_seq_scores[self.top_n1:] = -10000000
