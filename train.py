@@ -260,7 +260,12 @@ def run():
             print('%d - %d changed.' %(order, num_changes))
             dist_list.append(num_changes)
             # display_utils.visualize_attack(sess, model, dataset, x_orig, x_adv)
-        print('--------------------------')
+            # display_utils.visualize_attack(sess, model, dataset, x_orig, x_adv)
+            w_be = [dataset.inv_dict[seq[0].numpy().tolist()[i]] for i in list(np.where(seq[0].numpy() != np.array(x_adv))[0])]
+            w_to = [dataset.inv_dict[x_adv[i]] for i in list(np.where(seq[0].numpy() != np.array(x_adv))[0])]
+            for i in range(len(w_be)):
+              print('{} ----> {}'.format(w_be[i], w_to[i]))
+        
           
         
         n += 1
@@ -274,7 +279,7 @@ def run():
         SUCCESS_THRESHOLD  = 0.2
         successful_attacks = [x <= SUCCESS_THRESHOLD for x in normalized_dist_list]
         print('Attack success rate : {:.2f}%'.format(np.mean(successful_attacks)*100))
-        
+        print('--------------------------')
         
     
 

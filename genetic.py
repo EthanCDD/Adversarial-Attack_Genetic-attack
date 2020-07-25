@@ -29,7 +29,7 @@ class GeneticAttack_pytorch(object):
         self.top_n2 = n2
         self.use_lm = use_lm
         self.use_suffix = use_suffix
-        self.temp = 0.0005
+        self.temp = 0.0003
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         batch_size = 1
         self.scorer = LMScorer.from_pretrained("gpt2", device=self.device, batch_size=batch_size)
@@ -224,7 +224,7 @@ class GeneticAttack_pytorch(object):
             # print(ampl)
             covariance = np.cov(ampl)
 #            print(covariance)
-            if covariance>10e-4:
+            if covariance>10e-6:
               mean = np.mean(ampl)
               # print(mean)
               ampl_update = (ampl-mean)/np.sqrt(covariance+0.001)
