@@ -16,8 +16,21 @@ import os
 
 import data_utils_yelp
 import glove_utils
+import pandas as pd
+import numpy as np
 
-IMDB_PATH = 'aclImdb'
+yelp_train = pd.read_csv('yelp/train.csv', names=['stars', 'text'])
+yelp_test = pd.read_csv('yelp/test.csv', names=['stars', 'text'])
+
+train_label = list(np.array(yelp_train.loc[:,'stars'])-1)
+train_text = list(yelp_train.loc[:, 'text'])
+test_label = list(np.array(yelp_test.loc[:,'stars'])-1)
+test_text = list(yelp_test.loc[:, 'text'])
+with open('yelp_dataset_list', 'wb') as f:
+  pickle.dump((train_text, train_label, test_text, test_label), f)
+
+
+IMDB_PATH = 'yelp_dataset_list'
 MAX_VOCAB_SIZE = 50000
 GLOVE_PATH = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch/glove.840B.300d.txt'
 COUNTER_PATH = 'counter-fitted-vectors.txt'
