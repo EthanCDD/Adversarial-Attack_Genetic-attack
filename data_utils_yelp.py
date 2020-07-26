@@ -46,6 +46,6 @@ class YELPDataset(object):
   def read_text(self, train_data, test_data):
         """ Returns a list of text documents and a list of their labels
         (pos = +1, neg = 0) """
-        train_list = [x.lower() for x in train_data]
-        test_list = [x.lower() for x in test_data]
+        train_list = [x.lower() for x in train_data if len(x)>0 ]
+        test_list = [x.lower() for x in test_data if len(x)>0 ]
         return train_list, test_list

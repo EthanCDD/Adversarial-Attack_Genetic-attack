@@ -15,7 +15,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import pickle
 
 if not os.path.exists('aux_files'):
-    import build_embeddings
+    import build_embeddings_yelp
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
 import argparse
@@ -60,6 +60,16 @@ parser.add_argument('--save_path',
                     help = 'Save path',
                     default = '/content/drive/My Drive/Master_Final_Project/Genetic_attack/Code/nlp_adversarial_example_master_pytorch')
 
+def filter_empty(seqs, ys):
+  seqs2 = []
+  y2 = []
+  for (seq, y) in zip(seqs, ys):
+    if np.sum(np.sign(seq))>0:
+      seqs2.append(seq)
+      y2.append(y)
+  return seqs2, y2
+
+
 def train():
     args  = parser.parse_args()
     learning_rate = args.learning_rate
@@ -77,33 +87,34 @@ def train():
     embedding_matrix = torch.tensor(embedding_matrix.T).to(device)
     
     # pytorch
+    train_seqs2, train_y = filter_empty(dataset.train_seqs2, dataset.train_y)
+    test_seqs2, test_y = filter_empty(dataset.test_seqs2, dataset.test_y)
     max_len = args.max_len
-    padded_train_raw = pad_sequences(dataset.train_seqs2, maxlen = max_len, padding = 'post')
-    padded_test_raw = pad_sequences(dataset.test_seqs2, maxlen = max_len, padding = 'post')
-
+    padded_train_raw = pad_sequences(train_seqs2, maxlen = max_len, padding = 'post')
+    padded_test_raw = pad_sequences(test_seqs2, maxlen = max_len, padding = 'post')
     # TrainSet
-    data_set_train = Data_infor(padded_train_raw, dataset.train_y)
+    data_set_train = Data_infor(padded_train_raw, train_y)
     num_train = len(data_set_train)
     indx = list(range(num_train))
     all_train_set = Subset(data_set_train, indx)
-    train_indx = random.sample(indx, int(num_train*0.8))
-    vali_indx = [i for i in indx if i not in train_indx]
-    train_set = Subset(data_set_train, train_indx)
-    vali_set = Subset(data_set_train, vali_indx)
+    # train_indx = random.sample(indx, int(num_train*0.8))
+    # vali_indx = [i for i in indx if i not in train_indx]
+    # train_set = Subset(data_set_train, train_indx)
+    # vali_set = Subset(data_set_train, vali_indx)
     
     
     # TestSet
-    data_set_test = Data_infor(padded_test_raw, dataset.test_y)
+    data_set_test = Data_infor(padded_test_raw, test_y)
     num_test = len(data_set_test)
     indx = list(range(num_test))
     # indx = random.sample(indx, SAMPLE_SIZE)
     test_set = Subset(data_set_test, indx)
     
-    batch_size = 64
+    batch_size = 258
     hidden_size = 128
     all_train_loader = DataLoader(all_train_set, batch_size = batch_size, shuffle=True)
-    train_loader = DataLoader(train_set, batch_size = batch_size, shuffle=True)
-    vali_loader = DataLoader(vali_set, batch_size = len(vali_indx)//batch_size)
+    # train_loader = DataLoader(train_set, batch_size = batch_size, shuffle=True)
+    # vali_loader = DataLoader(vali_set, batch_size = len(vali_indx)//batch_size)
     test_loader = DataLoader(test_set, batch_size = int(num_test/10), shuffle = True)
     best_save_path = os.path.join(save_path, 'best_lstm_'+str(kept_prob)+'_'+str(learning_rate)+'_test2')
 
