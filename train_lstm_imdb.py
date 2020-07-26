@@ -15,7 +15,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import pickle
 
 if not os.path.exists('aux_files'):
-    import build_embeddings_imbd
+    import build_embeddings_imdb
 from SA_model import SentimentAnalysis
 from data_cluster_seg import Data_infor
 import argparse
