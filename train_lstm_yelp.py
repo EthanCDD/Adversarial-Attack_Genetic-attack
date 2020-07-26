@@ -110,7 +110,7 @@ def train():
     # indx = random.sample(indx, SAMPLE_SIZE)
     test_set = Subset(data_set_test, indx)
     
-    batch_size = 258
+    batch_size = 512
     hidden_size = 128
     all_train_loader = DataLoader(all_train_set, batch_size = batch_size, shuffle=True)
     # train_loader = DataLoader(train_set, batch_size = batch_size, shuffle=True)
