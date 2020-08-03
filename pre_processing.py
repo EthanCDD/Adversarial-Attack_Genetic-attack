@@ -144,10 +144,10 @@ class pre_processing(object):
     self.all_test_labels = np.concatenate((self.test_pos_labels,self.test_neg_labels), 1)
     self.all_test = self.test_pos_tokens+self.test_neg_tokens
 
-  def numerical(self, tokenizer, train_seqs, test_seqs, max_len):
+  def numerical(self, tokenizer, train_seqs, test_seqs):
 
-    train_text = [[tokenizer.cls_token_id]+ seq + [tokenizer.sep_token_id] if len(seq)<=max_len-2 else [tokenizer.cls_token_id]+ seq[0:max_len-2] + [tokenizer.sep_token_id] for seq in train_seqs]
-    test_text = [[tokenizer.cls_token_id]+ seq + [tokenizer.sep_token_id] if len(seq)<=max_len-2 else [tokenizer.cls_token_id]+ seq[0:max_len-2] + [tokenizer.sep_token_id] for seq in test_seqs]
+    train_text = [[tokenizer.cls_token_id]+ seq + [tokenizer.sep_token_id] for seq in train_seqs]
+    test_text = [[tokenizer.cls_token_id]+ seq + [tokenizer.sep_token_id] for seq in test_seqs]
     return train_text, test_text
   
   def bert_indx(self, tokenizer):
