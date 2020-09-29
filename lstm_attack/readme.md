@@ -1,4 +1,4 @@
-# Adversarial attack and transferability
+# Adversarial attack and defense
 This is based on paper 'Generating Natural Language Adversarial Examples'. However, there are some changes:
 
 -- Models are trained with PyTorch instead of TensorFlow
