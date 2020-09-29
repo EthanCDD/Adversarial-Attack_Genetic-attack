@@ -1,7 +1,7 @@
 # Adversarial attack and transferability
 This is based on paper 'Generating Natural Language Adversarial Examples'. However, there are some changes:
 
-The LSTM-based model is listed in the file of 'lstm_model' and bert-based model is listed in file of 'bert-model'.
+The LSTM-based model is listed in the document of 'lstm_model' and bert-based model is listed in document of 'bert-model'.
 
 In the file of 'lstm_model', it mainly includes the content of adversarial attack and defense; 'bert-model' includes the content of transferability.
 
